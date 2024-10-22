@@ -13,7 +13,9 @@ import PostRoutes from "./routes/posts.js"
 import { register } from "./controllers/auth.js"
 import { createPost } from "./controllers/post.js"
 import { verifyToken } from "./middleware/auth.js"
-
+import User from "./models/User.js"
+import Post from "./models/Post.js"
+import { users, posts } from "./data.index.js"
 /*Configuration*/
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -51,4 +53,8 @@ app.use("posts", PostRoutes)
 mongoose.connect(process.env.MONGODB_URL, {
     useNewUrlParse: true,
     useUnifiedTopology: true
+}).then(() => {
+    /* ADD DATA ONE TIME */
+    User.insertMany(users)
+    Post.insertMany(posts)
 }).catch((error) => console.log(`${error} connection error`))
