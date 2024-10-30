@@ -1,73 +1,58 @@
-import Post from "../models/Post.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-/* CREATE */
-export const createPost = async (req, res) => {
+/* REGISTER USER */
+export const register = async (req, res) => {
   try {
-    const { userId, description, picturePath } = req.body;
-    const user = await User.findById(userId);
-    const newPost = new Post({
-      userId,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      location: user.location,
-      description,
-      userPicturePath: user.picturePath,
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
       picturePath,
-      likes: {},
-      comments: [],
+      friends,
+      location,
+      occupation,
+    } = req.body;
+
+    const salt = await bcrypt.genSalt();
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    const newUser = new User({
+      firstName,
+      lastName,
+      email,
+      password: passwordHash,
+      picturePath,
+      friends,
+      location,
+      occupation,
+      viewedProfile: Math.floor(Math.random() * 10000),
+      impressions: Math.floor(Math.random() * 10000),
     });
-    await newPost.save();
-
-    const post = await Post.find();
-    res.status(201).json(post);
+    const savedUser = await newUser.save();
+    res.status(201).json(savedUser);
   } catch (err) {
-    res.status(409).json({ message: err.message });
+    res.status(500).json({ error: err.message });
   }
 };
 
-/* READ */
-export const getFeedPosts = async (req, res) => {
+/* LOGGING IN */
+export const login = async (req, res) => {
+  console.log('asdfasdf')
   try {
-    const post = await Post.find();
-    res.status(200).json(post);
+    const { email, password } = req.body;
+    const user = await User.findOne({ email: email });
+    if (!user) return res.status(400).json({ msg: "User does not exist. " });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ msg: "Invalid credentials. " });
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    delete user.password;
+    res.status(200).json({ token, user });
   } catch (err) {
-    res.status(404).json({ message: err.message });
-  }
-};
-
-export const getUserPosts = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const post = await Post.find({ userId });
-    res.status(200).json(post);
-  } catch (err) {
-    res.status(404).json({ message: err.message });
-  }
-};
-
-/* UPDATE */
-export const likePost = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { userId } = req.body;
-    const post = await Post.findById(id);
-    const isLiked = post.likes.get(userId);
-
-    if (isLiked) {
-      post.likes.delete(userId);
-    } else {
-      post.likes.set(userId, true);
-    }
-
-    const updatedPost = await Post.findByIdAndUpdate(
-      id,
-      { likes: post.likes },
-      { new: true }
-    );
-
-    res.status(200).json(updatedPost);
-  } catch (err) {
-    res.status(404).json({ message: err.message });
+    res.status(500).json({ error: err.message });
   }
 };
