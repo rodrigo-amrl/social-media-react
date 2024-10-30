@@ -6,7 +6,7 @@ import { setFriends } from "state";
 import FlexBetween from "./FlexBetween";
 import UserImage from "./UserImage";
 
-const Friend = ({ friendId, name, subtitle, userPicturePath }) => {
+const Friend = ({ friendId, name, subtitle, userPicturePath, createdAt }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { _id } = useSelector((state) => state.user);
@@ -35,6 +35,7 @@ const Friend = ({ friendId, name, subtitle, userPicturePath }) => {
     const data = await response.json();
     dispatch(setFriends({ friends: data }));
   };
+  function timeAgo(initialDate) { const now = new Date(); const initialDateObj = new Date(initialDate); const difference = now - initialDateObj; const seconds = Math.floor(difference / 1000); const minutes = Math.floor(seconds / 60); const hours = Math.floor(minutes / 60); const days = Math.floor(hours / 24); if (days > 0) { return days + ' days ago'; } else if (hours > 0) { return hours + ' hours ago'; } else if (minutes > 0) { return minutes + ' minutes ago'; } else { return 'a few seconds ago'; } }
 
   return (
     <FlexBetween>
@@ -60,7 +61,7 @@ const Friend = ({ friendId, name, subtitle, userPicturePath }) => {
             {name}
           </Typography>
           <Typography color={medium} fontSize="0.75rem">
-            {subtitle}
+            {timeAgo(createdAt)} - {subtitle}
           </Typography>
         </Box>
       </FlexBetween>
